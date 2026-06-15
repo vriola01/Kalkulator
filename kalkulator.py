@@ -99,7 +99,7 @@ def wyciagnij_dane_z_pdf(wczytany_plik):
 
 # --- INTERFEJS WEBOWY (FRONTEND) ---
 st.set_page_config(page_title="Kalkulator HDF", layout="wide")
-st.title("✂️ Kalkulator Czasu i Kosztu Cięcia HDF")
+st.title("Kalkulator Czasu i Kosztu Cięcia HDF")
 
 kolumna_lewa, kolumna_prawa = st.columns([1, 1.2])
 
