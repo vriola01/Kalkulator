@@ -109,7 +109,7 @@ with kolumna_lewa:
     koszt_pracy = st.number_input("Koszt pracy maszyny (PLN/h):", min_value=0.0, value=672.0, step=10.0)
     powierzchnia_wzorcowa = st.number_input("Powierzchnia płyty wzorcowej (m2):", value=9.68, step=0.1)
 
-    st.subheader("2. Wczytaj Plik pCut/HPO")
+    st.subheader("2. Wczytaj Plik pCut")
     plik_pdf = st.file_uploader("Przeciągnij plik PDF tutaj", type=["pdf"])
 
 with kolumna_prawa:
