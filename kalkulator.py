@@ -30,8 +30,7 @@ def wyciagnij_dane_z_pdf(wczytany_plik):
                 if tekst_strony:
                     caly_tekst += tekst_strony + "\n"
                     
-                    # --- INTELIGENTNE FILTROWANIE STRON ---
-                    # Lista nagłówków tabel pomocniczych, które dublują nasze dane
+                    # Inteligentne filtrowanie stron (odrzucamy detale)
                     niechciane_strony = [
                         "Plan sztaplowania", 
                         "Przegląd planów cięcia", 
@@ -39,19 +38,12 @@ def wyciagnij_dane_z_pdf(wczytany_plik):
                         "Przegląd płyt ochronnych"
                     ]
                     
-                    # Jeśli na stronie NIE MA żadnego z tych nagłówków, to znaczy, 
-                    # że mamy przed sobą idealnie czystą stronę podsumowania (z naszą tabelą).
                     czy_to_detale = any(znacznik in tekst_strony for znacznik in niechciane_strony)
                     if not czy_to_detale:
                         tekst_podsumowania += tekst_strony + "\n"
                         
-        # 1. Płyty Wsadowe (szukamy TYLKO na odfiltrowanych stronach podsumowania)
         wzorzec_tabeli = re.findall(r'(?m)^\s*(?:\d{1,3}\s+)?(\d{3,4})\s+(\d{3,4})\s+(\d+\.\d+)\s+(\d{1,5})\b', tekst_podsumowania)
-        
-        # 2. Formatki - wyciągamy kolumnę "II. rzecz." (szukamy TYLKO na stronach podsumowania)
         wzorzec_formatek = re.findall(r'(?m)^\s*(?:\d{1,3}\s+)?\d{3,4}\s+\d{3,4}\s+(?:[a-zA-Z0-9-]+\s+)?\d+\s+(\d+)\b', tekst_podsumowania)
-        
-        # 3. Układanie / Pakietowanie (szukamy w CAŁYM pliku, bo może być tylko na "Protokole pakowania")
         wzorzec_ukladania = re.findall(r'(\d{2,4})\s*,\s*\d{3,5}\s*,\s*[a-zA-Z0-9]', caly_tekst)
         
         ilosci_paletowe_tekst = "250"
@@ -65,11 +57,8 @@ def wyciagnij_dane_z_pdf(wczytany_plik):
         zidentyfikowane_formaty = []
         znaleziona_grubosc = 0.0
         laczna_ilosc_formatek = 0
-        
-        # NOWOŚĆ: Zmienna do trzymania sumy (Powierzchnia * Ilość)
         suma_powierzchni_wazona = 0.0 
 
-        # Sumowanie płyt
         if wzorzec_tabeli:
             for dlugosc_str, szerokosc_str, grubosc_str, ilosc_str in wzorzec_tabeli:
                 dlugosc = float(dlugosc_str)
@@ -82,24 +71,23 @@ def wyciagnij_dane_z_pdf(wczytany_plik):
                 calkowita_liczba_plyt += ilosc 
                 znaleziona_grubosc = grubosc
                 
-                # NOWOŚĆ: Ścisłe wyliczanie powierzchni do średniej ważonej (w metrach kwadratowych)
+                # Wyliczanie powierzchni do średniej ważonej
                 pow_jednej_plyty = (dlugosc / 1000) * (szerokosc / 1000)
                 suma_powierzchni_wazona += (pow_jednej_plyty * ilosc)
 
                 zidentyfikowane_formaty.append(f"{ilosc} szt. | {dlugosc_str} x {szerokosc_str} x {grubosc_str} mm")
 
-        # Sumowanie formatek
         if wzorzec_formatek:
             laczna_ilosc_formatek = sum(int(x) for x in wzorzec_formatek)
             
-        # Wyliczenie ostatecznej średniej z surowych danych
+        # Wyliczenie precyzyjnej średniej ważonej z surowych danych
         srednia_pow = suma_powierzchni_wazona / calkowita_liczba_plyt if calkowita_liczba_plyt > 0 else 0.0
 
         return {
             "objetosc": round(calkowita_objetosc, 3),
             "liczba_plyt": calkowita_liczba_plyt,
             "grubosc": znaleziona_grubosc,
-            "srednia_pow_plyt": srednia_pow, # Przekazujemy nowy, precyzyjny wynik
+            "srednia_pow_plyt": srednia_pow,
             "formaty": "\n".join(zidentyfikowane_formaty) if zidentyfikowane_formaty else "Brak zidentyfikowanych partii.",
             "ilosci_paletowe": ilosci_paletowe_tekst,
             "ilosc_formatek": laczna_ilosc_formatek,
@@ -110,7 +98,7 @@ def wyciagnij_dane_z_pdf(wczytany_plik):
 
 # --- INTERFEJS WEBOWY (FRONTEND) ---
 st.set_page_config(page_title="Kalkulator HDF", layout="wide")
-st.title("Kalkulator Czasu i Kosztu Cięcia HDF")
+st.title("✂️ Kalkulator Czasu i Kosztu Cięcia HDF")
 
 kolumna_lewa, kolumna_prawa = st.columns([1, 1.2])
 
@@ -120,7 +108,7 @@ with kolumna_lewa:
     koszt_pracy = st.number_input("Koszt pracy maszyny (PLN/h):", min_value=0.0, value=672.0, step=10.0)
     powierzchnia_wzorcowa = st.number_input("Powierzchnia płyty wzorcowej (m2):", value=9.68, step=0.1)
 
-    st.subheader("2. Wczytaj Plik pCut")
+    st.subheader("2. Wczytaj Plik pCut/HPO")
     plik_pdf = st.file_uploader("Przeciągnij plik PDF tutaj", type=["pdf"])
 
 with kolumna_prawa:
@@ -135,14 +123,23 @@ with kolumna_prawa:
             with kol_dane1:
                 objetosc_edytowana = st.number_input("Rzeczywista objętość (m3):", value=float(dane["objetosc"]), format="%.3f")
                 liczba_plyt_edytowana = st.number_input("Liczba płyt wsadowych (szt):", value=int(dane["liczba_plyt"]), step=1)
-                grubosc_edytowana = st.number_input("Grubość płyty (mm):", value=float(dane["grubosc"]), format="%.1f")
                 
             with kol_dane2:
-                # TUTAJ JEST KLUCZOWA ZMIANA - podpinamy odczytaną zmienną z silnika!
                 ilosc_formatek = st.number_input("Łączna ilość formatek (szt):", value=int(dane["ilosc_formatek"]), step=10)
                 ilosci_tekst = st.text_input("Ilości na palecie (po przecinku):", value=dane["ilosci_paletowe"])
-                
+            
+            # --- ZMIANA W UKŁADZIE INTERFEJSU ---
+            # Pole z formatami wędruje wyżej
             st.text_area("Zidentyfikowane formaty:", value=dane["formaty"], height=100)
+            
+            # Grubość i nowa wyliczona Średnia Ważona obok siebie
+            kol_grubosc, kol_srednia = st.columns(2)
+            
+            with kol_grubosc:
+                grubosc_edytowana = st.number_input("Grubość płyty (mm):", value=float(dane["grubosc"]), format="%.1f")
+                
+            with kol_srednia:
+                srednia_pow_plyt = st.number_input("Średnia ważona pow. płyty (m2):", value=float(dane["srednia_pow_plyt"]), format="%.4f")
             
             st.markdown("---")
             
@@ -156,34 +153,27 @@ with kolumna_prawa:
                 with wynik1:
                     ostateczny_pakiet = st.number_input("📦 Pakiet (szt):", value=int(wyliczony_pakiet), step=1)
                 
-                if wydajnosc > 0 and liczba_plyt_edytowana > 0 and ostateczny_pakiet > 0 and grubosc_edytowana > 0:
+                if wydajnosc > 0 and liczba_plyt_edytowana > 0 and ostateczny_pakiet > 0 and grubosc_edytowana > 0 and srednia_pow_plyt > 0:
                     
                     stopien_skomplikowania = ilosc_formatek / liczba_plyt_edytowana
                     
-                    # --- NOWA, PRECYZYJNA SKALA MNOŻNIKA 'KN' ---
                     if stopien_skomplikowania > 12:
                         kn = 2.0
-                    elif stopien_skomplikowania >= 11: # Próg 11-12
+                    elif stopien_skomplikowania >= 11:
                         kn = 1.8
-                    elif stopien_skomplikowania >= 9:  # Próg 9-10
+                    elif stopien_skomplikowania >= 9:
                         kn = 1.6
-                    elif stopien_skomplikowania >= 7:  # Próg 7-8
+                    elif stopien_skomplikowania >= 7:
                         kn = 1.4
-                    elif stopien_skomplikowania >= 5:  # Próg 5-6
+                    elif stopien_skomplikowania >= 5:
                         kn = 1.2
-                    elif stopien_skomplikowania >= 3:  # Próg 3-4
+                    elif stopien_skomplikowania >= 3:
                         kn = 1.0
-                    else:                              # Próg 1-2
+                    else:
                         kn = 0.8
-                        
-                    calkowita_powierzchnia = objetosc_edytowana / (grubosc_edytowana / 1000)
-                    # --- ZMIANA: Pobieramy gotową średnią ważoną prosto z silnika ---
-                    srednia_pow_plyt = dane["srednia_pow_plyt"]
 
                     czesc_1 = objetosc_edytowana / wydajnosc
                     czesc_2_pierwiastek = (powierzchnia_wzorcowa / srednia_pow_plyt) ** (1/3)
-                    
-                    # Zaawansowane wykorzystanie wysokości cięcia (150 mm)
                     czesc_3_pakiet = 150 / (ostateczny_pakiet * grubosc_edytowana)
                     
                     czas_calkowity = czesc_1 * (czesc_2_pierwiastek * czesc_3_pakiet * kn)
