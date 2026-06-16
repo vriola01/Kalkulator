@@ -65,6 +65,9 @@ def wyciagnij_dane_z_pdf(wczytany_plik):
         zidentyfikowane_formaty = []
         znaleziona_grubosc = 0.0
         laczna_ilosc_formatek = 0
+        
+        # NOWOŚĆ: Zmienna do trzymania sumy (Powierzchnia * Ilość)
+        suma_powierzchni_wazona = 0.0 
 
         # Sumowanie płyt
         if wzorzec_tabeli:
@@ -78,17 +81,25 @@ def wyciagnij_dane_z_pdf(wczytany_plik):
                 calkowita_objetosc += objetosc_partii
                 calkowita_liczba_plyt += ilosc 
                 znaleziona_grubosc = grubosc
+                
+                # NOWOŚĆ: Ścisłe wyliczanie powierzchni do średniej ważonej (w metrach kwadratowych)
+                pow_jednej_plyty = (dlugosc / 1000) * (szerokosc / 1000)
+                suma_powierzchni_wazona += (pow_jednej_plyty * ilosc)
 
                 zidentyfikowane_formaty.append(f"{ilosc} szt. | {dlugosc_str} x {szerokosc_str} x {grubosc_str} mm")
 
         # Sumowanie formatek
         if wzorzec_formatek:
             laczna_ilosc_formatek = sum(int(x) for x in wzorzec_formatek)
+            
+        # Wyliczenie ostatecznej średniej z surowych danych
+        srednia_pow = suma_powierzchni_wazona / calkowita_liczba_plyt if calkowita_liczba_plyt > 0 else 0.0
 
         return {
             "objetosc": round(calkowita_objetosc, 3),
             "liczba_plyt": calkowita_liczba_plyt,
             "grubosc": znaleziona_grubosc,
+            "srednia_pow_plyt": srednia_pow, # Przekazujemy nowy, precyzyjny wynik
             "formaty": "\n".join(zidentyfikowane_formaty) if zidentyfikowane_formaty else "Brak zidentyfikowanych partii.",
             "ilosci_paletowe": ilosci_paletowe_tekst,
             "ilosc_formatek": laczna_ilosc_formatek,
@@ -166,13 +177,13 @@ with kolumna_prawa:
                         kn = 0.8
                         
                     calkowita_powierzchnia = objetosc_edytowana / (grubosc_edytowana / 1000)
-                    srednia_pow_plyt = calkowita_powierzchnia / liczba_plyt_edytowana
+                    # --- ZMIANA: Pobieramy gotową średnią ważoną prosto z silnika ---
+                    srednia_pow_plyt = dane["srednia_pow_plyt"]
 
                     czesc_1 = objetosc_edytowana / wydajnosc
                     czesc_2_pierwiastek = (powierzchnia_wzorcowa / srednia_pow_plyt) ** (1/3)
                     
-                    # --- ZAAWANSOWANE WYKORZYSTANIE WYSOKOŚCI CIĘCIA (150 mm) ---
-                    # Wysokość rzeczywista pakietu = ostateczny_pakiet * grubosc_edytowana
+                    # Zaawansowane wykorzystanie wysokości cięcia (150 mm)
                     czesc_3_pakiet = 150 / (ostateczny_pakiet * grubosc_edytowana)
                     
                     czas_calkowity = czesc_1 * (czesc_2_pierwiastek * czesc_3_pakiet * kn)
