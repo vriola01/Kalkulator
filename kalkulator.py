@@ -155,7 +155,7 @@ with kolumna_prawa:
                 
                 if wydajnosc > 0 and liczba_plyt_edytowana > 0 and ostateczny_pakiet > 0 and grubosc_edytowana > 0 and srednia_pow_plyt > 0:
                     
-                   stopien_skomplikowania = ilosc_formatek / liczba_plyt_edytowana
+                    stopien_skomplikowania = ilosc_formatek / liczba_plyt_edytowana
                     
                     # --- NOWA LOGIKA: Sprawdzanie od dołu do góry ---
                     if stopien_skomplikowania <= 2:
