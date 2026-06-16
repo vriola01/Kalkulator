@@ -155,22 +155,23 @@ with kolumna_prawa:
                 
                 if wydajnosc > 0 and liczba_plyt_edytowana > 0 and ostateczny_pakiet > 0 and grubosc_edytowana > 0 and srednia_pow_plyt > 0:
                     
-                    stopien_skomplikowania = ilosc_formatek / liczba_plyt_edytowana
+                   stopien_skomplikowania = ilosc_formatek / liczba_plyt_edytowana
                     
-                    if stopien_skomplikowania > 12:
-                        kn = 2.0
-                    elif stopien_skomplikowania >= 11:
-                        kn = 1.8
-                    elif stopien_skomplikowania >= 9:
-                        kn = 1.6
-                    elif stopien_skomplikowania >= 7:
-                        kn = 1.4
-                    elif stopien_skomplikowania >= 5:
-                        kn = 1.2
-                    elif stopien_skomplikowania >= 3:
-                        kn = 1.0
-                    else:
+                    # --- NOWA LOGIKA: Sprawdzanie od dołu do góry ---
+                    if stopien_skomplikowania <= 2:
                         kn = 0.8
+                    elif stopien_skomplikowania <= 4:
+                        kn = 1.0
+                    elif stopien_skomplikowania <= 6:
+                        kn = 1.2
+                    elif stopien_skomplikowania <= 8:
+                        kn = 1.4
+                    elif stopien_skomplikowania <= 10:
+                        kn = 1.6
+                    elif stopien_skomplikowania <= 12:
+                        kn = 1.8
+                    else:
+                        kn = 2.0
 
                     czesc_1 = objetosc_edytowana / wydajnosc
                     czesc_2_pierwiastek = (powierzchnia_wzorcowa / srednia_pow_plyt) ** (1/3)
