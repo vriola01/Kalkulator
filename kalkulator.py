@@ -104,8 +104,8 @@ kolumna_lewa, kolumna_prawa = st.columns([1, 1.2])
 
 with kolumna_lewa:
     st.subheader("1. Parametry Maszyny")
-    wydajnosc = st.number_input("Wydajność bazowa (m3/h):", min_value=0.1, value=12.0, step=0.1)
-    koszt_pracy = st.number_input("Koszt pracy maszyny (PLN/h):", min_value=0.0, value=672.0, step=10.0)
+    wydajnosc = st.number_input("Wydajność bazowa (m3/h):", min_value=0.1, value=1.0, step=0.1)
+    koszt_pracy = st.number_input("Koszt pracy maszyny (PLN/h):", min_value=0.0, value=10.0, step=10.0)
     powierzchnia_wzorcowa = st.number_input("Powierzchnia płyty wzorcowej (m2):", value=9.68, step=0.1)
 
     st.subheader("2. Wczytaj Plik pCut/HPO")
